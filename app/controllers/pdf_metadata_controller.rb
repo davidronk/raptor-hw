@@ -1,16 +1,18 @@
 class PdfMetadataController < ApplicationController
   
-  DocRaptor.configure do |config|
-    config.username = "YOUR_API_KEY_HERE"
-    # config.debugging = true
-  end
+  # DocRaptor.configure do |config|
+  #   config.username = "YOUR_API_KEY_HERE"
+  #   # config.debugging = true
+  # end
 
   # takes an array of urls and returns json metadata for each
   def index
 
     results = {}
     if params[:urls].present?
-      params[:urls].each do |url|
+
+      @docraptor = DocRaptor::DocApi.new
+      params[:urls].sort.each do |url|
 
         # use docraptor to convert html > pdf
         pdf_str = docraptor_sync url
@@ -23,25 +25,14 @@ class PdfMetadataController < ApplicationController
         results[page_count] = [] if results[page_count].nil?
         results[page_count] << meta
       end
-
-      # sort each page group by url
-      results.each_value do |same_size_pdfs|
-        same_size_pdfs.sort_by! {|doc| doc[:url]}
-      end
     end
-
-    results[0] = {
-      :params => params[:urls].size,
-      :urls => params[:urls]
-    }
 
     render :json => results
   end
 
-  private
+  
   def docraptor_sync(url)
-    docraptor = DocRaptor::DocApi.new
-    docraptor.create_doc(
+    @docraptor.create_doc(
       test:             true,                                         # test documents are free but watermarked
       document_url:   url,
       # name:             "docraptor-ruby.pdf",                         # help you find a document later
@@ -65,9 +56,5 @@ class PdfMetadataController < ApplicationController
       meta[:page_count] = reader.page_count
     end
     meta
-  end
-
-  def set_default_response_format
-    request.format = :json
   end
 end
