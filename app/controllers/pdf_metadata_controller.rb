@@ -45,6 +45,7 @@ class PdfMetadataController < ApplicationController
     else
       errors << "missing or empty 'urls' parameter"
     end
+    results = results.sort.to_h
     results[:errors] = errors if errors.present?
     render :json => results
   end
